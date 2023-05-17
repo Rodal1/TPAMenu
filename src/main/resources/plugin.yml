@@ -1,0 +1,15 @@
+name: TPAMenu
+version: '${project.version}'
+main: org.terminum.tpamenu.Main
+api-version: 1.19
+authors: [ Omega01 ]
+description: Menu with the heads of players to request /tpa.
+#folia-supported: true
+
+commands:
+  tpa:
+    description: Opens the menu.
+  tpaccept:
+    description: Accepts teleportation request.
+  tpadeny:
+    description: Denies teleportation request.

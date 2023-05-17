@@ -1,0 +1,61 @@
+#-------------------------------------------------
+MenuTitle: '&8| &9Jugadores'
+PlayerName: '&8| &fNombre: &b%player%'
+ItemDescription: '&8| &fClick para enviar &aTPA'
+#-------------------------------------------------
+NextPage: '&8| &aPágina siguiente'
+PreviousPage: '&8| &aPágina anterior'
+#-------------------------------------------------
+SubMenuTitle: '&8| &fEnviar tpa a &a%player%'
+#-------------------------------------------------
+SubMenuTPA: '&5› &aEnviar TPA'
+SubMenuTPALore:
+  - '&8| &fClick para enviar.'
+#-------------------------------------------------
+SubMenuWarning: '&5› &eAdvertencia'
+SubMenuWarningLore:
+  - '&8| &fAntes de enviar &aTPA'
+  - '&8| &fa un usuario, deberás leer esto.'
+  - ''
+  - '&8| &fClick para &ainformarte&f.'
+#-------------------------------------------------
+SubMenuCancel: '&5› &cCancelar TPA'
+SubMenuCancelLore:
+  - '&8| &fClick para cancelar.'
+#-------------------------------------------------
+SubMenuBack: '&8| &9Volver'
+#-------------------------------------------------
+RequestTarget: '&c%player% te envio una solicitud de teletransportación.'
+RequestAccept: '&8[&aACEPTAR&8]'
+RequestDeny: '&8[&cDENEGAR&8]'
+RequestSent: '&aSolicitud de /tpa enviada a %player%'
+BeforeAccept: '&r         '
+AfterAccept: '&r         '
+HoverMessageAccept: '&aHaz click para aceptar!'
+HoverMessageDeny: '&cHaz click para denegar!'
+SelfTpa: '&cNo te puedes enviar una solicitud de /tpa a ti mismo.'
+TargetDisconnected: '&cEste jugador no esta conectado.'
+AlreadySent: '&cUna solicitud de /tpa ya ha sido enviada.'
+PlayerAccepted: '&a%player% aceptó tu solicitud de teletransportación.'
+PlayerCancelled: '&cNegaste la solicitud de teletransportación.'
+TargetCancelled: '&c%player% negó tu solicitud de teletransportación.'
+
+#-------------------------------------------------
+RequestTPAItem: 'GREEN_CONCRETE'
+WarningItem: 'YELLOW_CONCRETE'
+CancelItem: 'RED_CONCRETE'
+BackItem: 'BARRIER'
+WarningMessage:
+  - '&8&m--------------------------------'
+  - '        &c&lTPAKILL'
+  - ''
+  - '&8| &fAl enviar &aTPA&f a un jugador, tienes que saber qué:'
+  - '&8- &fPodrás perder tus ítems'
+  - '&8- &fEn caso de perderlos, no podrás recuperarlos.'
+  - ''
+  - '&8| &fEvitar enviar &aTPA&f a lo random, puedes usar:'
+  - '&8- &b/trade &f- &b/spawn &fpara hacer intercambios.'
+  - ''
+  - '&8| &fRecuerda que el &cTPAKILL&f es &4&lILEGAL&f.'
+  - '&8| &fPuedes reportarlo en nuestro &aDiscord&f.'
+  - '&8&m--------------------------------'
