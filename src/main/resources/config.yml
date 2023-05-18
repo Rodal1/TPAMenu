@@ -25,7 +25,7 @@ SubMenuCancelLore:
 #-------------------------------------------------
 SubMenuBack: '&8| &9Volver'
 #-------------------------------------------------
-RequestTarget: '&c%player% te envio una solicitud de teletransportación.'
+RequestTarget: '&a%player% te envio una solicitud de teletransportación.'
 RequestAccept: '&8[&aACEPTAR&8]'
 RequestDeny: '&8[&cDENEGAR&8]'
 RequestSent: '&aSolicitud de /tpa enviada a %player%'
@@ -36,7 +36,8 @@ HoverMessageDeny: '&cHaz click para denegar!'
 SelfTpa: '&cNo te puedes enviar una solicitud de /tpa a ti mismo.'
 TargetDisconnected: '&cEste jugador no esta conectado.'
 AlreadySent: '&cUna solicitud de /tpa ya ha sido enviada.'
-PlayerAccepted: '&a%player% aceptó tu solicitud de teletransportación.'
+TargetAccepted: '&a%player% aceptó tu solicitud de teletransportación.'
+PlayerAccepted: '&aAceptaste la solicitud de teletransportacion de %player%.'
 PlayerCancelled: '&cNegaste la solicitud de teletransportación.'
 TargetCancelled: '&c%player% negó tu solicitud de teletransportación.'
 

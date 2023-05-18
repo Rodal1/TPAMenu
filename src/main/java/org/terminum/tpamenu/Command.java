@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 
 public class Command implements CommandExecutor, Listener {
 
-    String targetName;
+    Player targetPlayer;
     Logger log = Main.getPlugin().getLogger();
     Map<UUID, UUID> pendingRequests = new HashMap<>();
     FileConfiguration config = Main.getPlugin().getConfig();
@@ -54,7 +55,8 @@ public class Command implements CommandExecutor, Listener {
                                 p.sendMessage(color(config.getString("TargetDisconnected")));
                                 return true;
                             }
-                            tpaSender.sendMessage(color(Objects.requireNonNull(config.getString("PlayerAccepted")).replace("%player%", p.getName())));
+                            p.sendMessage(color(Objects.requireNonNull(config.getString("PlayerAccepted")).replace("%player%",tpaSender.getName())));
+                            tpaSender.sendMessage(color(Objects.requireNonNull(config.getString("TargetAccepted")).replace("%player%", p.getName())));
                             new BukkitRunnable() {
                                 @Override
                                 public void run() {
@@ -67,10 +69,12 @@ public class Command implements CommandExecutor, Listener {
                             }.runTaskLater(Main.getPlugin(), 3 * 20);
                         }
                     }
+                    break;
                 case "tpadeny":
                     pendingRequests.remove(p.getUniqueId());
                     p.sendMessage(color(config.getString("PlayerCancelled")));
-                    Objects.requireNonNull(Bukkit.getPlayer(targetName)).sendMessage(color(Objects.requireNonNull(config.getString("TargetCancelled")).replace("%player%", p.getName())));
+                    log.warning(targetPlayer.getName());
+                    targetPlayer.sendMessage(color(Objects.requireNonNull(config.getString("TargetCancelled")).replace("%player%", p.getName())));
                     break;
             }
         }
@@ -130,7 +134,7 @@ public class Command implements CommandExecutor, Listener {
     }
 
     private Inventory createSubMenu() {
-        Inventory subMenu = Bukkit.createInventory(null, 9 * 3, color(Objects.requireNonNull(config.getString("SubMenuTitle")).replace("%player%", targetName)));
+        Inventory subMenu = Bukkit.createInventory(null, 9 * 3, color(Objects.requireNonNull(config.getString("SubMenuTitle")).replace("%player%", targetPlayer.getName())));
 
         ItemStack requestTpaItem = new ItemStack(Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(config.getString("RequestTPAItem")))));
         ItemStack infoItem = new ItemStack(Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(config.getString("WarningItem")))));
@@ -177,7 +181,7 @@ public class Command implements CommandExecutor, Listener {
     @Deprecated
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if (!e.getView().getTitle().equals(color(config.getString("MenuTitle"))) && !e.getView().getTitle().equals(color(Objects.requireNonNull(config.getString("SubMenuTitle")).replace("%player%", targetName)))) {
+        if (!e.getView().getTitle().equals(color(config.getString("MenuTitle"))) && !e.getView().getTitle().equals(color(Objects.requireNonNull(config.getString("SubMenuTitle")).replace("%player%", targetPlayer.getName())))) {
             log.warning("Not passed on Inventory Click.");
             log.warning(e.getView().getTitle());
             return;
@@ -193,7 +197,8 @@ public class Command implements CommandExecutor, Listener {
             //Clickear una cabeza
             switch (clickedItem.getType()) {
                 case PLAYER_HEAD:
-                    targetName = clickedItem.getItemMeta().getDisplayName().substring(16);
+                    SkullMeta skullMeta = (SkullMeta) clickedItem.getItemMeta();
+                    targetPlayer = Objects.requireNonNull(skullMeta.getOwningPlayer()).getPlayer();
                     e.setCancelled(true);
                     p.closeInventory();
                     p.openInventory(createSubMenu());
@@ -217,11 +222,11 @@ public class Command implements CommandExecutor, Listener {
         }
         //Abrir cabeza de usuario
         log.warning(e.getView().getTitle());
-        if (e.getView().getTitle().equals(color(Objects.requireNonNull(config.getString("SubMenuTitle")).replace("%player%", targetName)))) {
+        if (e.getView().getTitle().equals(color(Objects.requireNonNull(config.getString("SubMenuTitle")).replace("%player%", targetPlayer.getName())))) {
             log.warning("Passed on Inventory Click to SubMenuTitle");
             //Clickear TPA
             if (Objects.equals(clickedItem.getItemMeta().displayName(), Component.text(color(Objects.requireNonNull(Objects.requireNonNull(config.getString("SubMenuTPA"))))))) {
-                if (p.getName().equals(targetName)) {
+                if (p.getName().equals(targetPlayer.getName())) {
                     p.sendMessage(color(config.getString("SelfTpa")));
                     e.setCancelled(true);
                     p.closeInventory();
@@ -229,22 +234,22 @@ public class Command implements CommandExecutor, Listener {
                 }
                 log.warning("Passed on Inventory Click to TPA");
                 p.closeInventory();
-                if (Bukkit.getPlayer(targetName) == null) {
-                    log.warning("TARGET NULL: " + targetName);
+                if (targetPlayer == null) {
+                    log.warning("TARGET NULL: " + targetPlayer.getName());
                     return;
                 }
                 if (pendingRequests != null) {
                     if (!pendingRequests.isEmpty()) {
                         for (Map.Entry<UUID, UUID> map : pendingRequests.entrySet()) {
                             log.warning(map.getKey() + ", " + map.getValue());
-                            if (map.getValue() == p.getUniqueId() && map.getKey() == Bukkit.getPlayerUniqueId(targetName)) {
+                            if (map.getValue() == p.getUniqueId() && map.getKey() == targetPlayer.getUniqueId()) {
                                 p.sendMessage(color(config.getString("AlreadySent")));
                                 return;
                             }
                         }
                     }
                 }
-                tpaRequest(p, Bukkit.getPlayer(targetName));
+                tpaRequest(p, targetPlayer);
                 log.warning("Command performed.");
             } else if (Objects.equals(clickedItem.getItemMeta().displayName(), Component.text(color(Objects.requireNonNull(Objects.requireNonNull(config.getString("SubMenuWarning"))))))) {
                 for (String i : config.getStringList("WarningMessage")) {
@@ -262,7 +267,7 @@ public class Command implements CommandExecutor, Listener {
         }
     }
 
-    private void waitDelay(Player p, Player t) {
+    private void waitDelay(Player p, OfflinePlayer t) {
         pendingRequests.put(t.getUniqueId(), p.getUniqueId());
         new BukkitRunnable() {
             @Override
@@ -298,7 +303,7 @@ public class Command implements CommandExecutor, Listener {
         message = message.append(space2);
         message = message.append(deny);
 
-        waitDelay(p, Objects.requireNonNull(Bukkit.getPlayer(targetName)));
+        waitDelay(p, targetPlayer);
         target.sendMessage(color(Objects.requireNonNull(config.getString("RequestTarget")).replace("%player%", p.getName())));
         target.sendMessage(message);
     }
