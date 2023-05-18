@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -12,6 +11,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -25,10 +26,13 @@ import java.util.stream.Collectors;
 
 public class Command implements CommandExecutor, Listener {
 
-    Player targetPlayer;
+    static Player targetPlayer;
+    static Player requestPlayer;
     Logger log = Main.getPlugin().getLogger();
-    Map<UUID, UUID> pendingRequests = new HashMap<>();
+    static Map<UUID, UUID> pendingRequests = new HashMap<>();
+    static Set<UUID> duringTP = new HashSet<>();
     FileConfiguration config = Main.getPlugin().getConfig();
+
 
     public String color(String s) {
         return Main.getPlugin().colorize(s);
@@ -48,35 +52,66 @@ public class Command implements CommandExecutor, Listener {
                     p.openInventory(createMainMenu(p, 1));
                     break;
                 case "tpaccept":
+                    log.warning("Command: TPACCEPT");
+                    log.warning(pendingRequests.toString());
                     for (Map.Entry<UUID, UUID> map : pendingRequests.entrySet()) {
-                        if (map.getKey() == p.getUniqueId()) {
+                        log.warning(map.toString());
+                        if (map.getKey().equals(p.getUniqueId())) {
+                            log.warning("Found Key");
                             Player tpaSender = Bukkit.getPlayer(map.getValue());
+                            log.warning("Pre TPASender NULL");
                             if (tpaSender == null) {
-                                p.sendMessage(color(config.getString("TargetDisconnected")));
+                                p.sendMessage(color(config.getString("Disconnected")));
                                 return true;
                             }
+                            log.warning("Post TPASender NULL");
                             p.sendMessage(color(Objects.requireNonNull(config.getString("PlayerAccepted")).replace("%player%",tpaSender.getName())));
                             tpaSender.sendMessage(color(Objects.requireNonNull(config.getString("TargetAccepted")).replace("%player%", p.getName())));
+                            duringTP.add(requestPlayer.getUniqueId());
                             new BukkitRunnable() {
                                 @Override
                                 public void run() {
                                     try {
-                                        tpaSender.teleport(p.getLocation());
+                                        if (duringTP.contains(requestPlayer.getUniqueId())) {
+                                            log.warning("PassedTPA");
+                                            duringTP.remove(requestPlayer.getUniqueId());
+                                            pendingRequests.remove(p.getUniqueId());
+                                            tpaSender.teleport(p.getLocation());
+                                        }
                                     } catch (NullPointerException e) {
                                         log.warning(e.getMessage());
                                     }
                                 }
-                            }.runTaskLater(Main.getPlugin(), 3 * 20);
+                            }.runTaskLater(Main.getPlugin(), (long) (config.getDouble("TPMoveTime") * 20));
                         }
                     }
                     break;
                 case "tpadeny":
+                    if (!pendingRequests.containsKey(p.getUniqueId())) {
+                        p.sendMessage(color(config.getString("NoPendingRequests")));
+                        return true;
+                    }
                     pendingRequests.remove(p.getUniqueId());
                     p.sendMessage(color(config.getString("PlayerCancelled")));
-                    log.warning(targetPlayer.getName());
-                    targetPlayer.sendMessage(color(Objects.requireNonNull(config.getString("TargetCancelled")).replace("%player%", p.getName())));
+                    requestPlayer.sendMessage(color(Objects.requireNonNull(config.getString("TargetCancelled")).replace("%player%", p.getName())));
+                    targetPlayer = null; // Reset the lastTargetPlayer variable
                     break;
             }
+        } else if (args.length == 1) {
+            if (cmd.getName().equalsIgnoreCase("tpa")) {
+                if (args[0].equalsIgnoreCase(p.getName())) {
+                    p.sendMessage(color(config.getString("SelfTpa")));
+                    return true;
+                }
+                targetPlayer = Bukkit.getPlayer(args[0]);
+                if (targetPlayer == null) {
+                    p.sendMessage(color(config.getString("Disconnected")));
+                    return true;
+                }
+                p.openInventory(createSubMenu());
+            }
+        } else {
+            p.sendMessage(color(config.getString("Usage")));
         }
         return false;
     }
@@ -242,7 +277,7 @@ public class Command implements CommandExecutor, Listener {
                     if (!pendingRequests.isEmpty()) {
                         for (Map.Entry<UUID, UUID> map : pendingRequests.entrySet()) {
                             log.warning(map.getKey() + ", " + map.getValue());
-                            if (map.getValue() == p.getUniqueId() && map.getKey() == targetPlayer.getUniqueId()) {
+                            if (map.getValue().equals(p.getUniqueId()) && map.getKey().equals(targetPlayer.getUniqueId())) {
                                 p.sendMessage(color(config.getString("AlreadySent")));
                                 return;
                             }
@@ -250,6 +285,7 @@ public class Command implements CommandExecutor, Listener {
                     }
                 }
                 tpaRequest(p, targetPlayer);
+                requestPlayer = p.getPlayer();
                 log.warning("Command performed.");
             } else if (Objects.equals(clickedItem.getItemMeta().displayName(), Component.text(color(Objects.requireNonNull(Objects.requireNonNull(config.getString("SubMenuWarning"))))))) {
                 for (String i : config.getStringList("WarningMessage")) {
@@ -265,16 +301,24 @@ public class Command implements CommandExecutor, Listener {
                 p.openInventory(createMainMenu(p, 1));
             }
         }
+        e.setCancelled(true);
     }
 
-    private void waitDelay(Player p, OfflinePlayer t) {
+    private void waitDelay(Player p, Player t) {
         pendingRequests.put(t.getUniqueId(), p.getUniqueId());
+        log.warning("Added to map.");
+        log.warning(pendingRequests.toString());
         new BukkitRunnable() {
             @Override
             public void run() {
-                pendingRequests.remove(t.getUniqueId(), p.getUniqueId());
+                log.warning("Removed from map.");
+                if (pendingRequests.containsKey(t.getUniqueId()) && pendingRequests.get(t.getUniqueId()).equals(p.getUniqueId())) {
+                    pendingRequests.remove(t.getUniqueId());
+                    p.sendMessage(color(Objects.requireNonNull(config.getString("PlayerTpExpired")).replace("%target%", t.getName())));
+                    t.sendMessage(color(Objects.requireNonNull(config.getString("TargetTpExpired")).replace("%player%", p.getName())));
+                }
             }
-        }.runTaskLater(Main.getPlugin(), 120 * 20); // 30 seconds
+        }.runTaskLater(Main.getPlugin(), (long) (config.getDouble("TPWaitTime") * 20)); // 30 seconds
     }
 
     private void tpaRequest(Player p, Player target) {
@@ -282,7 +326,7 @@ public class Command implements CommandExecutor, Listener {
             return;
         }
         if (target == null) {
-            p.sendMessage(color(config.getString("TargetDisconnected")));
+            p.sendMessage(color(config.getString("Disconnected")));
             return;
         }
         Component accept = Component.text(color(config.getString("RequestAccept")))
@@ -304,7 +348,42 @@ public class Command implements CommandExecutor, Listener {
         message = message.append(deny);
 
         waitDelay(p, targetPlayer);
+        p.sendMessage(color(Objects.requireNonNull(config.getString("PlayerRequested")).replace("%player%",target.getName())));
         target.sendMessage(color(Objects.requireNonNull(config.getString("RequestTarget")).replace("%player%", p.getName())));
         target.sendMessage(message);
+    }
+
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent e) {
+        Player p = e.getPlayer();
+        if (duringTP.contains(p.getUniqueId())) {
+            duringTP.remove(p.getUniqueId());
+            log.warning(pendingRequests.toString());
+            pendingRequests.remove(targetPlayer.getUniqueId());
+            log.warning(pendingRequests.toString());
+            p.sendMessage(color(config.getString("PlayerMoved")));
+            targetPlayer.sendMessage(color(Objects.requireNonNull(config.getString("RequesterMoved")).replace("%player%", p.getName())));
+        }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) {
+        Player p = e.getPlayer();
+        if (pendingRequests.containsValue(p.getUniqueId())) {
+            for (Map.Entry<UUID,UUID> map : pendingRequests.entrySet()) {
+                if (map.getValue().equals(p.getUniqueId())) {
+                    pendingRequests.remove(map.getKey());
+                    targetPlayer.sendMessage(color(Objects.requireNonNull(config.getString("RequesterDisconnected")).replace("%player%",p.getName())));
+                }
+            }
+        }
+        if (pendingRequests.containsKey(p.getUniqueId())) {
+            for (Map.Entry<UUID,UUID> map : pendingRequests.entrySet()) {
+                if (map.getKey().equals(p.getUniqueId())) {
+                    pendingRequests.remove(map.getKey());
+                    requestPlayer.sendMessage(color(Objects.requireNonNull(config.getString("TargetDisconnected")).replace("%target%",p.getName())));
+                }
+            }
+        }
     }
 }

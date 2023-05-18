@@ -35,7 +35,7 @@ public final class Main extends JavaPlugin {
     }
 
     public String colorize(String s) {
-        return ChatColor.translateAlternateColorCodes('&',s);
+        return ChatColor.translateAlternateColorCodes('&', s);
     }
 
     public List<String> colorizeList(List<String> list) {

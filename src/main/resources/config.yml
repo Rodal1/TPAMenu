@@ -25,6 +25,8 @@ SubMenuCancelLore:
 #-------------------------------------------------
 SubMenuBack: '&8| &9Volver'
 #-------------------------------------------------
+TPMoveTime: 3 #seconds
+TPWaitTime: 10 #seconds
 RequestTarget: '&a%player% te envio una solicitud de teletransportación.'
 RequestAccept: '&8[&aACEPTAR&8]'
 RequestDeny: '&8[&cDENEGAR&8]'
@@ -34,13 +36,21 @@ AfterAccept: '&r         '
 HoverMessageAccept: '&aHaz click para aceptar!'
 HoverMessageDeny: '&cHaz click para denegar!'
 SelfTpa: '&cNo te puedes enviar una solicitud de /tpa a ti mismo.'
-TargetDisconnected: '&cEste jugador no esta conectado.'
+Disconnected: '&cEste jugador no esta conectado.'
 AlreadySent: '&cUna solicitud de /tpa ya ha sido enviada.'
-TargetAccepted: '&a%player% aceptó tu solicitud de teletransportación.'
 PlayerAccepted: '&aAceptaste la solicitud de teletransportacion de %player%.'
 PlayerCancelled: '&cNegaste la solicitud de teletransportación.'
+TargetAccepted: '&a%player% aceptó tu solicitud de teletransportación. No te muevas por 3 segundos.'
 TargetCancelled: '&c%player% negó tu solicitud de teletransportación.'
-
+PlayerRequested: '&aEnviaste una solicitud de teletransportacion a %player%.'
+NoPendingRequests: '&cNadie te ha enviado una solicitud.'
+PlayerMoved: '&cTe has movido, tu solicitud se ha cancelado.'
+RequesterMoved: '&c%player% se ha movido y su solicitud de teletransportación se ha cancelado.'
+PlayerTpExpired: '&c%target% nunca aceptó tu solicitud de teletransportación.'
+TargetTpExpired: '&cLa solicitud de %player% ha vencido.'
+RequesterDisconnected: '&cLa solicitud de %player% se ha cancelado porque se ha desconectado.'
+TargetDisconnected: '&cTu solicitud a %target% se ha cancelado porque se ha desconectado.'
+Usage: '&c/tpa o /tpa <jugador>'
 #-------------------------------------------------
 RequestTPAItem: 'GREEN_CONCRETE'
 WarningItem: 'YELLOW_CONCRETE'
